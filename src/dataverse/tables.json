@@ -1,0 +1,295 @@
+{
+  "SchemaName": "msfer",
+  "Tables": [
+    {
+      "TableName": "msfer_fluxo",
+      "DisplayName": "Fluxo",
+      "Description": "Metadados dos fluxos Power Automate",
+      "PrimaryColumn": {
+        "ColumnName": "msfer_name",
+        "DisplayName": "Nome",
+        "Description": "Nome técnico do fluxo",
+        "DataType": "SingleLineOfText",
+        "MaxLength": 100,
+        "Required": true
+      },
+      "Columns": [
+        {
+          "ColumnName": "msfer_flowid",
+          "DisplayName": "ID do Fluxo",
+          "Description": "ID único do fluxo no Power Automate",
+          "DataType": "UniqueId",
+          "Required": true
+        },
+        {
+          "ColumnName": "msfer_displayname",
+          "DisplayName": "Nome de Exibição",
+          "Description": "Nome de exibição do fluxo",
+          "DataType": "SingleLineOfText",
+          "MaxLength": 200,
+          "Required": false
+        },
+        {
+          "ColumnName": "msfer_description",
+          "DisplayName": "Descrição",
+          "Description": "Descrição do fluxo",
+          "DataType": "MultipleLinesOfText",
+          "MaxLength": 2000,
+          "Required": false
+        },
+        {
+          "ColumnName": "msfer_state",
+          "DisplayName": "Status",
+          "Description": "Status do fluxo",
+          "DataType": "Picklist",
+          "Required": true,
+          "Options": [
+            { "Value": 1, "Label": "Ativado" },
+            { "Value": 2, "Label": "Desativado" },
+            { "Value": 3, "Label": "Rascunho" }
+          ]
+        },
+        {
+          "ColumnName": "msfer_type",
+          "DisplayName": "Tipo",
+          "Description": "Tipo do fluxo",
+          "DataType": "Picklist",
+          "Required": true,
+          "Options": [
+            { "Value": 1, "Label": "Fluxo de Nuvem" },
+            { "Value": 2, "Label": "Instantâneo" },
+            { "Value": 3, "Label": "Automático" },
+            { "Value": 4, "Label": "Agendado" }
+          ]
+        },
+        {
+          "ColumnName": "msfer_createdby",
+          "DisplayName": "Criado Por",
+          "Description": "Usuário que criou o fluxo",
+          "DataType": "SingleLineOfText",
+          "MaxLength": 100,
+          "Required": false
+        },
+        {
+          "ColumnName": "msfer_modifiedby",
+          "DisplayName": "Modificado Por",
+          "Description": "Usuário que modificou o fluxo",
+          "DataType": "SingleLineOfText",
+          "MaxLength": 100,
+          "Required": false
+        },
+        {
+          "ColumnName": "msfer_createdon",
+          "DisplayName": "Data de Criação",
+          "Description": "Data de criação do fluxo",
+          "DataType": "DateTime",
+          "Required": false
+        },
+        {
+          "ColumnName": "msfer_modifiedon",
+          "DisplayName": "Data de Modificação",
+          "Description": "Data de modificação do fluxo",
+          "DataType": "DateTime",
+          "Required": false
+        },
+        {
+          "ColumnName": "msfer_definition",
+          "DisplayName": "Definição",
+          "Description": "Definição JSON do fluxo",
+          "DataType": "MultipleLinesOfText",
+          "MaxLength": 1048576,
+          "Required": false
+        },
+        {
+          "ColumnName": "msfer_definitionchecksum",
+          "DisplayName": "Hash Definição",
+          "Description": "_checksum da definição para detecção de alterações",
+          "DataType": "SingleLineOfText",
+          "MaxLength": 64,
+          "Required": false
+        }
+      ],
+      "Relationships": [
+        {
+          "Name": "msfer_fluxo_ambiente",
+          "DisplayName": "Ambiente",
+          "TargetTable": "msfer_ambiente",
+          "RelationshipType": "OneToMany"
+        },
+        {
+          "Name": "msfer_fluxo_solucao",
+          "DisplayName": "Solução",
+          "TargetTable": "msfer_solucao",
+          "RelationshipType": "OneToMany"
+        }
+      ]
+    },
+    {
+      "TableName": "msfer_ambiente",
+      "DisplayName": "Ambiente",
+      "Description": "Ambientes do Power Platform",
+      "PrimaryColumn": {
+        "ColumnName": "msfer_name",
+        "DisplayName": "Nome",
+        "Description": "Nome técnico do ambiente",
+        "DataType": "SingleLineOfText",
+        "MaxLength": 100,
+        "Required": true
+      },
+      "Columns": [
+        {
+          "ColumnName": "msfer_environmentid",
+          "DisplayName": "ID do Ambiente",
+          "Description": "ID único do ambiente",
+          "DataType": "UniqueId",
+          "Required": true
+        },
+        {
+          "ColumnName": "msfer_displayname",
+          "DisplayName": "Nome de Exibição",
+          "Description": "Nome de exibição do ambiente",
+          "DataType": "SingleLineOfText",
+          "MaxLength": 200,
+          "Required": false
+        },
+        {
+          "ColumnName": "msfer_type",
+          "DisplayName": "Tipo",
+          "Description": "Tipo do ambiente",
+          "DataType": "Picklist",
+          "Required": true,
+          "Options": [
+            { "Value": 1, "Label": "Produção" },
+            { "Value": 2, "Label": "Teste" },
+            { "Value": 3, "Label": "Desenvolvimento" },
+            { "Value": 4, "Label": "Área de Preparo" }
+          ]
+        },
+        {
+          "ColumnName": "msfer_region",
+          "DisplayName": "Região",
+          "Description": "Região do ambiente",
+          "DataType": "SingleLineOfText",
+          "MaxLength": 100,
+          "Required": false
+        },
+        {
+          "ColumnName": "msfer_isdefault",
+          "DisplayName": "É Padrão",
+          "Description": "Indica se é o ambiente padrão",
+          "DataType": "TwoOptions",
+          "Required": false
+        }
+      ]
+    },
+    {
+      "TableName": "msfer_conector",
+      "DisplayName": "Conector",
+      "Description": "Conectores do Power Platform",
+      "PrimaryColumn": {
+        "ColumnName": "msfer_name",
+        "DisplayName": "Nome",
+        "Description": "Nome técnico do conector",
+        "DataType": "SingleLineOfText",
+        "MaxLength": 100,
+        "Required": true
+      },
+      "Columns": [
+        {
+          "ColumnName": "msfer_connectorid",
+          "DisplayName": "ID do Conector",
+          "Description": "ID único do conector",
+          "DataType": "UniqueId",
+          "Required": true
+        },
+        {
+          "ColumnName": "msfer_displayname",
+          "DisplayName": "Nome de Exibição",
+          "Description": "Nome de exibição do conector",
+          "DataType": "SingleLineOfText",
+          "MaxLength": 200,
+          "Required": false
+        },
+        {
+          "ColumnName": "msfer_api",
+          "DisplayName": "API",
+          "Description": "API do conector",
+          "DataType": "SingleLineOfText",
+          "MaxLength": 100,
+          "Required": false
+        },
+        {
+          "ColumnName": "msfer_tier",
+          "DisplayName": "Tier",
+          "Description": "Tier do conector",
+          "DataType": "Picklist",
+          "Required": true,
+          "Options": [
+            { "Value": 1, "Label": "Standard" },
+            { "Value": 2, "Label": "Premium" },
+            { "Value": 3, "Label": "Dedicated" }
+          ]
+        }
+      ]
+    },
+    {
+      "TableName": "msfer_solucao",
+      "DisplayName": "Solução",
+      "Description": "Soluções do Power Platform",
+      "PrimaryColumn": {
+        "ColumnName": "msfer_name",
+        "DisplayName": "Nome",
+        "Description": "Nome técnico da solução",
+        "DataType": "SingleLineOfText",
+        "MaxLength": 100,
+        "Required": true
+      },
+      "Columns": [
+        {
+          "ColumnName": "msfer_solutionid",
+          "DisplayName": "ID da Solução",
+          "Description": "ID único da solução",
+          "DataType": "UniqueId",
+          "Required": true
+        },
+        {
+          "ColumnName": "msfer_displayname",
+          "DisplayName": "Nome de Exibição",
+          "Description": "Nome de exibnição da solução",
+          "DataType": "SingleLineOfText",
+          "MaxLength": 200,
+          "Required": false
+        },
+        {
+          "ColumnName": "msfer_publisher",
+          "DisplayName": "Publicador",
+          "Description": "Publicador da solução",
+          "DataType": "SingleLineOfText",
+          "MaxLength": 100,
+          "Required": false
+        },
+        {
+          "ColumnName": "msfer_version",
+          "DisplayName": "Versão",
+          "Description": "Versão da solução",
+          "DataType": "SingleLineOfText",
+          "MaxLength": 50,
+          "Required": false
+        }
+      ]
+    },
+    {
+      "TableName": "msfer_fluxo_conector",
+      "DisplayName": "Fluxo Conector",
+      "Description": "Relação muitos para muitos entre Fluxo e Conector",
+      "PrimaryColumn": {
+        "ColumnName": "msfer_name",
+        "DisplayName": "Nome",
+        "DataType": "SingleLineOfText",
+        "MaxLength": 100,
+        "Required": true
+      },
+      "Columns": []
+    }
+  ]
+}

@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ferramenta de Busca de Fluxos Power Platform</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',sans-serif;background:#f5f5f5;min-height:100vh}
+.header{background:linear-gradient(135deg,#0078d4,#106ebe);color:white;padding:20px 30px;display:flex;justify-content:space-between;align-items:center}
+.header h1{font-size:24px;font-weight:600}
+.header p{opacity:.8;margin-top:5px}
+.btn-logout{background:rgba(255,255,255,.2);border:none;color:white;padding:8px 15px;border-radius:6px;cursor:pointer;display:none}
+.container{max-width:1400px;margin:0 auto;padding:30px}
+.login-panel{background:white;border-radius:12px;padding:40px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,.05)}
+.login-panel h2{font-size:24px;color:#333;margin-bottom:10px}
+.login-panel p{color:#666;margin-bottom:20px}
+.env-input-wrap{display:flex;gap:10px;max-width:600px;margin:0 auto 20px}
+.env-input-wrap input{flex:1;padding:12px 16px;border:2px solid #e0e0e0;border-radius:8px;font-size:14px}
+.env-input-wrap input:focus{outline:none;border-color:#0078d4}
+.btn{padding:12px 25px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:all .3s;display:inline-flex;align-items:center;gap:8px}
+.btn-primary{background:#0078d4;color:white}
+.btn-primary:hover{background:#106ebe}
+.btn-secondary{background:#f0f0f0;color:#333}
+.btn-secondary:hover{background:#e0e0e0}
+.hint{font-size:12px;color:#999;margin-top:8px}
+.search-panel{background:white;border-radius:12px;padding:25px;margin-bottom:25px;box-shadow:0 2px 10px rgba(0,0,0,.05);display:none}
+.search-box{display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap}
+.search-box input{flex:1;min-width:200px;padding:12px 16px;border:2px solid #e0e0e0;border-radius:8px;font-size:14px}
+.search-box input:focus{outline:none;border-color:#0078d4}
+.filters{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.filter-item{display:flex;flex-direction:column;gap:6px}
+.filter-item label{font-size:12px;color:#666;font-weight:500}
+.filter-item select{padding:10px 14px;border:2px solid #e0e0e0;border-radius:8px;font-size:13px;min-width:160px}
+.results-panel{background:white;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.05);overflow:hidden;display:none}
+.results-header{padding:20px 25px;border-bottom:1px solid #e0e0e0;display:flex;justify-content:space-between;align-items:center}
+.results-count{background:#f0f0f0;padding:5px 15px;border-radius:20px;font-size:13px;color:#666}
+.results-table{width:100%;border-collapse:collapse}
+.results-table th{background:#f8f8f8;padding:14px 20px;text-align:left;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid #e0e0e0}
+.results-table td{padding:14px 20px;border-bottom:1px solid #f0f0f0;font-size:13px}
+.results-table tr:hover{background:#fafafa}
+.match-list{display:flex;flex-direction:column;gap:4px;max-width:360px}
+.match-item{font-size:12px;color:#333;line-height:1.35}
+.match-path{display:block;color:#0078d4;font-weight:600;word-break:break-word}
+.match-value{display:block;color:#666;word-break:break-word}
+.match-hit{background:#fff4ce;color:#3b2f00;padding:0 2px;border-radius:3px}
+.status-badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600}
+.status-Enabled{background:#d4edda;color:#155724}
+.status-Disabled{background:#f8d7da;color:#721c24}
+.type-badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;background:#e7f3ff;color:#0078d4}
+.btn-icon{padding:7px 12px;border-radius:6px;font-size:12px;background:#f0f0f0;color:#333;cursor:pointer;border:none}
+.btn-icon:hover{background:#e0e0e0}
+.loading{padding:60px;text-align:center;color:#666}
+.spinner{width:40px;height:40px;border:4px solid #f0f0f0;border-top-color:#0078d4;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 20px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty-state{padding:60px;text-align:center;color:#999}
+.error-msg{background:#f8d7da;color:#721c24;padding:15px;border-radius:8px;margin-bottom:15px}
+.pagination{display:flex;justify-content:center;align-items:center;gap:10px;padding:20px;border-top:1px solid #e0e0e0}
+.pagination button{padding:8px 15px;border:2px solid #e0e0e0;background:white;border-radius:8px;cursor:pointer;font-size:13px}
+.pagination button:hover:not(:disabled){border-color:#0078d4;color:#0078d4}
+.pagination button:disabled{opacity:.4;cursor:not-allowed}
+.detail-panel{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:1000;overflow-y:auto}
+.detail-panel.active{display:block}
+.detail-content{background:white;max-width:800px;margin:50px auto;border-radius:12px;overflow:hidden}
+.detail-header{background:linear-gradient(135deg,#0078d4,#106ebe);color:white;padding:25px;display:flex;justify-content:space-between;align-items:flex-start}
+.detail-header h2{font-size:20px}
+.detail-header p{opacity:.8;margin-top:4px;font-size:13px}
+.detail-close{background:rgba(255,255,255,.2);border:none;color:white;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:18px}
+.detail-body{padding:25px}
+.detail-section{margin-bottom:25px}
+.detail-section h3{font-size:11px;color:#999;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.detail-row{display:flex;padding:10px 0;border-bottom:1px solid #f5f5f5}
+.detail-label{width:160px;color:#666;font-size:13px;font-weight:500}
+.detail-value{flex:1;color:#333;font-size:13px}
+.json-viewer{background:#1e1e1e;color:#d4d4d4;padding:15px;border-radius:8px;font-family:'Consolas',monospace;font-size:11px;max-height:300px;overflow:auto;white-space:pre-wrap;word-break:break-all}
+.env-tag{font-size:11px;background:#e7f3ff;color:#0078d4;padding:2px 8px;border-radius:10px;margin-left:8px}
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <h1>Ferramenta de Busca de Fluxos Power Platform</h1>
+    <p>Pesquise e gerencie fluxos Power Automate da sua organização</p>
+  </div>
+  <button class="btn-logout" id="logoutBtn" onclick="logout()">Sair</button>
+</div>
+
+<div class="container">
+  <div class="login-panel" id="loginPanel">
+    <h2>Conectar ao Power Platform</h2>
+    <p>Cole a URL do seu ambiente e entre com sua conta Microsoft</p>
+    <div class="env-input-wrap">
+      <input type="text" id="envUrlInput"
+        placeholder="https://make.powerautomate.com/environments/Default-xxx/flows ou https://omega.crm2.dynamics.com/"
+        title="Cole a URL do ambiente do Power Automate, Power Apps, Admin Center ou CRM Dynamics">
+    </div>
+    <!-- campo de ID do ambiente removido por opção do usuário -->
+    <div class="env-input-wrap">
+      <input type="email" id="usernameInput" placeholder="Seu email Microsoft" required>
+    </div>
+    <div class="env-input-wrap">
+      <input type="password" id="passwordInput" placeholder="Sua senha" required>
+    </div>
+    <p class="hint">Cole a URL do ambiente ou o ID do ambiente, e clique em Entrar com MFA.</p>
+    <br>
+    <button class="btn btn-primary" id="loginBtn" onclick="doLoginMFA()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+      Entrar com MFA
+    </button>
+    <div id="loginError" class="error-msg" style="display:none;max-width:500px;margin:15px auto 0"></div>
+  </div>
+
+  <div class="login-panel" id="deviceCodePanel" style="display:none">
+    <h2>🔐 Autenticação com MFA</h2>
+    <p>Siga os passos abaixo para fazer login:</p>
+    <div style="background:#f0f7ff; padding:20px; border-radius:8px; margin:20px 0;">
+      <p style="margin-bottom:15px;">1. Acesse este link no seu navegador:</p>
+      <a id="deviceCodeUri" href="#" target="_blank" style="color:#0078d4; font-weight:bold; word-break:break-all; display:block; margin-bottom:15px;">Abrindo...</a>
+      <p style="margin-bottom:10px;">2. Digite este código quando solicitado:</p>
+      <div style="background:white; padding:15px; border-radius:6px; font-size:24px; font-weight:bold; text-align:center; font-family:monospace; letter-spacing:2px; margin-bottom:15px;">
+        <span id="deviceUserCode">----</span>
+      </div>
+      <p id="deviceCodeStatus" style="color:#666; font-size:12px;">Aguardando seu login...</p>
+      <div class="loading"><div class="spinner" style="width:30px; height:30px;"></div></div>
+    </div>
+    <button class="btn btn-secondary" onclick="cancelDeviceCode()">Cancelar</button>
+  </div>
+
+  <div class="login-panel" id="envSelectorPanel" style="display:none">
+    <h2>Selecione o Ambiente</h2>
+    <p>Escolha qual ambiente deseja usar para buscar fluxos</p>
+    <div id="environmentsList" style="margin:20px 0; max-height:400px; overflow-y:auto;">
+      <div class="loading"><div class="spinner"></div>Carregando ambientes...</div>
+    </div>
+    <button class="btn btn-secondary" onclick="logout()">Voltar</button>
+  </div>
+
+  <div class="search-panel" id="searchPanel" style="display:none">
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="Buscar por nome, status, tipo, criador, conector ou configuração...">
+      <button class="btn btn-primary" style="margin-left:8px" onclick="applyFilters()">Buscar</button>
+    </div>
+    <div class="filters">
+      <div class="filter-item">
+        <label>Status</label>
+        <select id="statusFilter" onchange="applyFilters()">
+          <option value="">Todos</option>
+          <option value="Enabled">Ativado</option>
+          <option value="Disabled">Desativado</option>
+        </select>
+      </div>
+      <div class="filter-item">
+        <label>Tipo</label>
+        <select id="typeFilter" onchange="applyFilters()">
+          <option value="">Todos os tipos</option>
+          <option value="scheduled">Agendado</option>
+          <option value="instant">Instantâneo</option>
+          <option value="automated">Automático</option>
+        </select>
+      </div>
+      <div class="filter-item">
+        <label>Ordenar por</label>
+        <select id="sortFilter" onchange="applyFilters()">
+          <option value="name">Nome</option>
+          <option value="modified">Data de Modificação</option>
+        </select>
+      </div>
+      <button class="btn btn-secondary" onclick="clearFilters()">Limpar Filtros</button>
+      <button class="btn btn-secondary" onclick="downloadFlowsReport()">Baixar Relatorio</button>
+    </div>
+  </div>
+
+  <div class="results-panel" id="resultsPanel">
+    <div class="results-header">
+      <h2>Resultados <span class="env-tag" id="envTag"></span></h2>
+      <span class="results-count" id="resultsCount">0 fluxos</span>
+    </div>
+    <div id="resultsContent"><div class="empty-state"><p>Nenhum fluxo encontrado</p></div></div>
+    <div class="pagination" id="pagination" style="display:none">
+      <button onclick="prevPage()" id="prevBtn">← Anterior</button>
+      <span id="pageInfo">Página 1 de 1</span>
+      <button onclick="nextPage()" id="nextBtn">Próxima →</button>
+    </div>
+  </div>
+</div>
+
+<div class="detail-panel" id="detailPanel">
+  <div class="detail-content">
+    <div class="detail-header">
+      <div><h2 id="detailTitle">Detalhes do Fluxo</h2><p id="detailSubtitle"></p></div>
+      <button class="detail-close" onclick="closeDetail()">×</button>
+    </div>
+    <div class="detail-body" id="detailBody"></div>
+  </div>
+</div>
+
+<script>
+// ── Config ──────────────────────────────────────────────────────────────
+let flows = [], filteredFlows = [];
+let currentPage = 1, pageSize = 20;
+let accessToken = null, flowAccessToken = null, bapAccessToken = null, environmentId = null;
+let deepLoadInProgress = false;
+let deepLoadLoaded = 0, deepLoadTotal = 0, deepLoadFailed = 0;
+
+function setTokens(data) {
+  flowAccessToken = data.flowAccessToken || data.accessToken || null;
+  bapAccessToken = data.bapAccessToken || flowAccessToken;
+  accessToken = flowAccessToken;
+}
+
+// debug index removed
+
+
+function getBapAuthHeader() {
+  return 'Bearer ' + (bapAccessToken || flowAccessToken || accessToken);
+}
+
+function getFlowAuthHeader() {
+  return 'Bearer ' + (flowAccessToken || accessToken);
+}
+
+// ── Extrai ID do ambiente de qualquer URL do Power Platform ou CRM ──────────────────
+function extractEnvironmentId(input) {
+  if (!input) return '';
+  const s = input.trim();
+  const patterns = [
+    /make\.powerautomate\.com\/[^\/]+\/environments\/([^\/\?#]+)/i,
+    /make\.powerautomate\.com\/environments\/([^\/\?#]+)/i,
+    /make\.powerapps\.com\/environments\/([^\/\?#]+)/i,
+    /admin\.powerplatform\.microsoft\.com\/environments\/([^\/\?#]+)/i,
+    /flow\.microsoft\.com\/[a-z-]+\/environments\/([^\/\?#]+)/i,
+    /\/environments\/([A-Za-z0-9_-]{10,})/i,
+  ];
+  for (const p of patterns) {
+    const m = s.match(p);
+    if (m) return decodeURIComponent(m[1]);
+  }
+  if (s.match(/https:\/\/[a-zA-Z0-9_-]+\.crm[0-9]*\.dynamics\.com/i)) {
+    return 'CRM:' + s;
+  }
+  return s;
+}
+
+// ── Login ──────────────────────────────────────────────────────────
+async function doLogin() {
+  const envUrl = document.getElementById('envUrlInput').value.trim();
+  const envIdManual = '';
+  const username = document.getElementById('usernameInput').value.trim();
+  const password = document.getElementById('passwordInput').value;
+
+  if (!envUrl && !envIdManual) {
+    showLoginError('Por favor, cole a URL do seu ambiente ou o ID do ambiente');
+    return;
+  }
+  if (!username || !password) {
+    showLoginError('Por favor, preencha email e senha');
+    return;
+  }
+
+  environmentId = extractEnvironmentId(envUrl);
+
+  document.getElementById('loginBtn').textContent = 'Entrando...';
+  document.getElementById('loginBtn').disabled = true;
+  document.getElementById('loginError').style.display = 'none';
+
+  try {
+    const loginResponse = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const loginData = await loginResponse.json();
+    if (!loginResponse.ok) throw new Error(loginData.error);
+    setTokens(loginData);
+
+    const extractedId = extractEnvironmentId(envUrl);
+    if (extractedId.startsWith('CRM:')) {
+      const crmUrl = extractedId.substring(4);
+      const discoverResponse = await fetch('/api/discover-env', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': getBapAuthHeader()
+        },
+        body: JSON.stringify({ crmUrl })
+      });
+      const discoverData = await discoverResponse.json();
+      if (!discoverResponse.ok) throw new Error(discoverData.error);
+      environmentId = discoverData.environmentId;
+    } else {
+      environmentId = extractedId;
+    }
+
+    if (!environmentId) {
+      throw new Error('Nao foi possivel identificar o ambiente.');
+    }
+
+    openEnvironmentOrSelector();
+  } catch (e) {
+    document.getElementById('loginBtn').textContent = 'Entrar';
+    document.getElementById('loginBtn').disabled = false;
+    showLoginError('Erro ao fazer login: ' + e.message);
+  }
+}
+
+function openEnvironmentOrSelector() {
+  if (environmentId) {
+    selectEnvironment(environmentId, environmentId);
+    return;
+  }
+  loadEnvironments();
+}
+
+async function loadEnvironments() {
+  document.getElementById('loginPanel').style.display = 'none';
+  document.getElementById('envSelectorPanel').style.display = 'block';
+  const envList = document.getElementById('environmentsList');
+  
+  try {
+    const response = await fetch('/api/environments', {
+      headers: { 'Authorization': getBapAuthHeader() }
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error);
+    
+    const envs = data.environments || [];
+    if (envs.length === 0) {
+      envList.innerHTML = '<p style="color:#666">Nenhum ambiente encontrado</p>';
+      return;
+    }
+    
+    let html = '';
+    envs.forEach(env => {
+      html += `
+        <div style="background:#f9f9f9; padding:12px; margin:8px 0; border-radius:6px; cursor:pointer; border:2px solid #e0e0e0; transition:all .2s" 
+             onmouseover="this.style.borderColor='#0078d4'" 
+             onmouseout="this.style.borderColor='#e0e0e0'"
+             onclick="selectEnvironment('${env.id}', '${env.displayName}')">
+          <strong>${env.displayName}</strong><br>
+          <small style="color:#999">${env.id}</small><br>
+          <small style="color:#666">${env.type || 'Padrão'}</small>
+        </div>
+      `;
+    });
+    envList.innerHTML = html;
+  } catch (e) {
+    envList.innerHTML = '<p style="color:#d00">Erro ao listar ambientes: ' + e.message + '</p>';
+  }
+}
+
+function selectEnvironment(envId, displayName) {
+  environmentId = envId;
+  document.getElementById('envSelectorPanel').style.display = 'none';
+  document.getElementById('searchPanel').style.display = 'block';
+  document.getElementById('resultsPanel').style.display = 'block';
+  document.getElementById('logoutBtn').style.display = 'block';
+  document.getElementById('envTag').textContent = displayName || environmentId;
+  loadFlows();
+}
+
+function showLoginError(msg) {
+  const el = document.getElementById('loginError');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function formatNetworkError(error) {
+  if (error?.message === 'Failed to fetch') {
+    if (window.location.protocol === 'file:') {
+      return 'Abra a ferramenta por http://localhost:3000, não diretamente pelo arquivo index.html. Inicie com npm start.';
+    }
+    return 'Não foi possível conectar ao servidor local. Confirme se o npm start está rodando e acesse http://localhost:3000.';
+  }
+  return error?.message || String(error);
+}
+
+let deviceCodePollInterval = null;
+
+async function doLoginMFA() {
+  const envUrl = document.getElementById('envUrlInput').value.trim();
+
+  if (!envUrl) {
+    showLoginError('Cole a URL do ambiente antes de usar MFA.');
+    return;
+  }
+
+  document.getElementById('loginPanel').style.display = 'none';
+  document.getElementById('deviceCodePanel').style.display = 'block';
+  document.getElementById('loginError').style.display = 'none';
+
+  try {
+    const response = await fetch('/api/device-code', { method: 'POST' });
+    const data = await response.json();
+    
+    if (!data.verificationUri) throw new Error('Falha ao iniciar autenticação');
+    
+    document.getElementById('deviceUserCode').textContent = data.userCode;
+    document.getElementById('deviceCodeUri').href = data.verificationUri;
+    document.getElementById('deviceCodeUri').textContent = data.verificationUri;
+    
+    window.open(data.verificationUri, '_blank');
+    
+    pollDeviceCode(data.deviceCode, envUrl);
+  } catch (e) {
+    document.getElementById('deviceCodePanel').style.display = 'none';
+    document.getElementById('loginPanel').style.display = 'block';
+    showLoginError('Erro ao iniciar autenticação: ' + formatNetworkError(e));
+  }
+}
+
+function pollDeviceCode(deviceCode, envUrl) {
+  let attempts = 0;
+  const maxAttempts = 300; // 5 minutos
+  const statusEl = document.getElementById('deviceCodeStatus');
+  
+  deviceCodePollInterval = setInterval(async () => {
+    attempts++;
+    if (attempts > maxAttempts) {
+      clearInterval(deviceCodePollInterval);
+      cancelDeviceCode();
+      showLoginError('Tempo de autenticação expirado. Tente novamente.');
+      return;
+    }
+    
+    try {
+      const response = await fetch('/api/device-code-poll', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deviceCode })
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (response.status === 200) {
+        clearInterval(deviceCodePollInterval);
+        setTokens(data);
+        environmentId = extractEnvironmentId(envUrl);
+        if (environmentId.startsWith('CRM:')) {
+          const crmUrl = environmentId.substring(4);
+          const discoverResponse = await fetch('/api/discover-env', {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': getBapAuthHeader()
+            },
+            body: JSON.stringify({ crmUrl })
+          });
+          const discoverData = await discoverResponse.json();
+          if (!discoverResponse.ok) throw new Error(discoverData.error);
+          environmentId = discoverData.environmentId;
+        }
+
+        document.getElementById('deviceCodePanel').style.display = 'none';
+        openEnvironmentOrSelector();
+        return;
+      }
+
+      if (response.status === 202) {
+        statusEl.textContent = 'Aguardando confirmação...';
+        return;
+      }
+
+      clearInterval(deviceCodePollInterval);
+      cancelDeviceCode();
+      showLoginError('Falha no login MFA: ' + (data.error || response.statusText));
+    } catch (e) {
+      clearInterval(deviceCodePollInterval);
+      cancelDeviceCode();
+      showLoginError('Erro no polling: ' + e.message);
+    }
+  }, 2000);
+}
+
+function cancelDeviceCode() {
+  if (deviceCodePollInterval) clearInterval(deviceCodePollInterval);
+  document.getElementById('deviceCodePanel').style.display = 'none';
+  document.getElementById('loginPanel').style.display = 'block';
+}
+
+function logout() {
+  if (deviceCodePollInterval) clearInterval(deviceCodePollInterval);
+  accessToken = null; flowAccessToken = null; bapAccessToken = null; environmentId = null; flows = []; filteredFlows = [];
+  document.getElementById('loginPanel').style.display = 'block';
+  document.getElementById('deviceCodePanel').style.display = 'none';
+  document.getElementById('envSelectorPanel').style.display = 'none';
+  document.getElementById('searchPanel').style.display = 'none';
+  document.getElementById('resultsPanel').style.display = 'none';
+  document.getElementById('logoutBtn').style.display = 'none';
+  document.getElementById('loginBtn').textContent = 'Entrar';
+  document.getElementById('loginBtn').disabled = false;
+  document.getElementById('usernameInput').value = '';
+  document.getElementById('passwordInput').value = '';
+  renderResults();
+}
+async function proxyGet(apiUrl) {
+  const resp = await fetch('/api/proxy?url=' + encodeURIComponent(apiUrl), {
+    headers: { 'Authorization': getFlowAuthHeader() }
+  });
+  if (resp.status === 401) { logout(); throw new Error('Sessão expirada'); }
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.error || resp.statusText);
+  }
+  return resp.json();
+}
+
+function flowListUrl() {
+  return `https://api.flow.microsoft.com/providers/Microsoft.ProcessSimple/scopes/admin/environments/${environmentId}/v2/flows?api-version=2016-11-01&$top=250&includeSoftDeletedFlows=false`;
+}
+
+function flowDetailUrl(encodedName) {
+  return `https://api.flow.microsoft.com/providers/Microsoft.ProcessSimple/scopes/admin/environments/${environmentId}/flows/${encodedName}?api-version=2016-11-01`;
+}
+
+function flowDetailV2Url(encodedName) {
+  return `https://api.flow.microsoft.com/providers/Microsoft.ProcessSimple/scopes/admin/environments/${environmentId}/v2/flows/${encodedName}?api-version=2016-11-01`;
+}
+
+function flowUserDetailUrl(encodedName) {
+  return `https://api.flow.microsoft.com/providers/Microsoft.ProcessSimple/environments/${environmentId}/flows/${encodedName}?api-version=2016-11-01`;
+}
+
+function flowUserDetailV2Url(encodedName) {
+  return `https://api.flow.microsoft.com/providers/Microsoft.ProcessSimple/environments/${environmentId}/v2/flows/${encodedName}?api-version=2016-11-01`;
+}
+
+function withDefinitionExpand(url) {
+  return url + '&$expand=swagger,properties.connectionreferences.apidefinition,properties.definitionSummary.operations.apiOperation,operationDefinition,plan,properties.throttleData,properties.estimatedsuspensiondata';
+}
+
+// ── Carrega fluxos ───────────────────────────────────────────────────────────
+async function loadFlows() {
+  showLoading();
+  try {
+    flows = [];
+    let url = flowListUrl();
+    while (url) {
+      const data = await proxyGet(url);
+      
+      if (!data) {
+        console.warn('Resposta vazia da API de fluxos');
+        break;
+      }
+      
+      const batch = data.value || data.flows || [];
+      flows.push(...batch.map(f => {
+        const nf = { ...f, environmentName: environmentId };
+        try {
+          const props = nf.properties || {};
+          const clientData = parseMaybeJson(props.clientData || nf.clientData || props.clientdata);
+          const hasDef = Boolean(
+            nf.definition ||
+            props.definition ||
+            props.workflowDefinition ||
+            clientData?.definition ||
+            clientData?.properties?.definition
+          );
+          if (hasDef) {
+            // Mescla os detalhes disponíveis para permitir busca no JSON imediatamente
+            const detail = { ...(nf.rawDetail || {}), properties: props, definition: props.definition || nf.definition };
+            mergeFlowDetail(nf, detail);
+            nf.definitionLoaded = true;
+          }
+        } catch (e) {
+          console.warn('Erro ao mesclar definição inicial do fluxo', e);
+        }
+        return nf;
+      }));
+      document.getElementById('resultsCount').textContent = flows.length + ' fluxos carregados...';
+      url = data.nextLink || data['@odata.nextLink'] || null;
+      if (url && !url.startsWith('http')) {
+        url = 'https://api.flow.microsoft.com' + url;
+      }
+    }
+    applyFilters();
+    
+    // Inicia carregamento profundo em background
+    document.getElementById('resultsCount').innerHTML += ` <span id="deepLoadStatus" style="color:#0078d4; font-size:11px; margin-left:10px;">(Baixando conteúdo: 0%)</span>`;
+    loadFlowDefinitionsBackground();
+
+  } catch(e) {
+    const msg = e.message || String(e);
+    if (msg.includes('not permitted') || msg.includes('permission') || msg.includes('Forbidden') || msg.includes('does not have permissions')) {
+      showError('Sem permissão neste ambiente. <button class="btn btn-secondary" onclick="loadEnvironments()">Escolher outro</button><br>' + msg);
+    } else {
+      showError('Erro ao carregar fluxos: ' + msg);
+    }
+  }
+}
+
+async function loadFlowDefinitionsBackground() {
+  deepLoadLoaded = 0;
+  deepLoadFailed = 0;
+  deepLoadTotal = flows.length;
+  deepLoadInProgress = true;
+  renderResults();
+  
+  // Cria lotes para não sobrecarregar a API (3 por vez)
+  for (let i = 0; i < flows.length; i += 3) {
+    const batch = flows.slice(i, i + 3);
+    await Promise.all(batch.map(async (f) => {
+      if (f.definitionLoaded) return;
+      try {
+        const detail = await loadFlowDetail(f);
+        mergeFlowDetail(f, detail);
+        f.definitionLoaded = true;
+      } catch (e) {
+        f.definitionLoadError = e.message || String(e);
+        deepLoadFailed++;
+      }
+      deepLoadLoaded++;
+    }));
+    
+    // Reaplica filtros ativos porque tipo e busca dependem dos detalhes carregados em background.
+    if (hasActiveFilters()) {
+      applyFilters();
+    } else {
+      renderResults();
+    }
+  }
+  deepLoadInProgress = false;
+  if (hasActiveFilters()) applyFilters();
+  else renderResults();
+}
+
+// local samples support removed
+
+
+async function loadFlowDetail(flow) {
+  const encodedName = encodeURIComponent(flow.name);
+  const urls = [
+    withDefinitionExpand(flowUserDetailUrl(encodedName)),
+    withDefinitionExpand(flowDetailUrl(encodedName)),
+    withDefinitionExpand(flowUserDetailV2Url(encodedName)),
+    withDefinitionExpand(flowDetailV2Url(encodedName)),
+    flowDetailV2Url(encodedName),
+    flowDetailUrl(encodedName),
+    flowUserDetailV2Url(encodedName),
+    flowUserDetailUrl(encodedName)
+  ];
+  let lastError = null;
+  let fallbackDetail = null;
+
+  for (const url of urls) {
+    try {
+      const detail = await proxyGet(url);
+      if (!fallbackDetail) fallbackDetail = detail;
+      if (hasDefinitionPayload(detail)) return detail;
+    } catch (e) {
+      lastError = e;
+    }
+  }
+
+  if (fallbackDetail) return fallbackDetail;
+  throw lastError || new Error('Não foi possível carregar detalhes do fluxo');
+}
+
+function hasDefinitionPayload(detail) {
+  const props = detail?.properties || {};
+  const clientData = parseMaybeJson(props.clientData || detail?.clientData);
+  return Boolean(
+    detail?.definition ||
+    detail?.operationDefinition ||
+    detail?.swagger ||
+    props.definition ||
+    props.workflowDefinition ||
+    props.definitionSummary ||
+    props.operationDefinition ||
+    props.swagger ||
+    clientData?.definition ||
+    clientData?.properties?.definition ||
+    clientData?.properties?.workflowDefinition
+  );
+}
+
+function mergeFlowDetail(flow, detail) {
+  flow.rawDetail = detail;
+  flow.properties = {
+    ...(flow.properties || {}),
+    ...(detail.properties || {})
+  };
+
+  const clientData = parseMaybeJson(flow.properties.clientData || detail.properties?.clientData || detail.clientData);
+  if (!flow.properties.definition) {
+    flow.properties.definition =
+      detail.definition ||
+      detail.flowDefinition ||
+      detail.properties?.workflowDefinition ||
+      clientData?.definition ||
+      clientData?.properties?.definition ||
+      clientData?.properties?.workflowDefinition ||
+      flow.properties.definition;
+  }
+
+  // Indexar explicitamente a definição/flowDefinition além dos outros campos
+  const combinedForIndex = {
+    detail,
+    properties: flow.properties,
+    clientData
+  };
+  let searchable = expandSearchableValue(combinedForIndex);
+  try {
+    const defSource = flow.properties.definition || detail.flowDefinition || detail.properties?.workflowDefinition || clientData?.definition || clientData?.properties?.definition || {};
+    searchable += ' ' + expandSearchableValue(defSource);
+  } catch (e) {
+    // ignored
+  }
+  flow.searchableDetail = searchable;
+}
+
+function clearFilters() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('statusFilter').value = '';
+  document.getElementById('typeFilter').value = '';
+  document.getElementById('sortFilter').value = 'name';
+  applyFilters();
+}
+
+function hasActiveFilters() {
+  return Boolean(
+    document.getElementById('searchInput').value.trim() ||
+    document.getElementById('statusFilter').value ||
+    document.getElementById('typeFilter').value
+  );
+}
+
+function csvEscape(value) {
+  const text = value == null ? '' : String(value);
+  return '"' + text.replace(/"/g, '""') + '"';
+}
+
+function escapeHtml(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function downloadFlowsReport() {
+  const reportFlows = filteredFlows.length ? filteredFlows : flows;
+  if (!reportFlows.length) {
+    showError('Nenhum fluxo carregado para baixar.');
+    return;
+  }
+
+  const rows = [
+    ['ID do Fluxo', 'Nome', 'Status', 'Tipo', 'Criado por', 'Modificado por', 'Modificado em', 'Link']
+  ];
+
+  reportFlows.forEach(f => {
+    const id = f.name || '';
+    const name = f.properties?.displayName || f.displayName || id;
+    const status = getFlowStatusLabel(f);
+    const type = getFlowType(f);
+    const createdBy = f.properties?.creator?.displayName || f.properties?.creator?.email || '';
+    const modifiedBy = f.properties?.lastModifiedBy?.displayName || f.properties?.lastModifiedBy?.email || '';
+    const modifiedOn = f.properties?.lastModifiedTime ? new Date(f.properties.lastModifiedTime).toLocaleString('pt-BR') : '';
+    const link = `https://make.powerautomate.com/environments/${environmentId}/flows/${id}`;
+    rows.push([id, name, status, type, createdBy, modifiedBy, modifiedOn, link]);
+  });
+
+  const csv = '\uFEFF' + rows.map(row => row.map(csvEscape).join(';')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const date = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `relatorio-fluxos-${environmentId || 'ambiente'}-${date}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function getFlowType(flow) {
+  const key = getFlowTypeKey(flow);
+  if (key === 'scheduled') return 'Agendado';
+  if (key === 'instant') return 'Instantâneo';
+  if (key === 'automated') return 'Automático';
+  return 'Fluxo de Nuvem';
+}
+
+function getFlowTypeKey(flow) {
+  const triggers = flow.properties?.definition?.triggers || {};
+  const keys = Object.keys(triggers);
+  if (!keys.length) return 'cloud';
+
+  const trigger = triggers[keys[0]] || {};
+  const type = normalizeStr(trigger.type || '');
+  const kind = normalizeStr(trigger.kind || '');
+  const triggerText = normalizeStr(JSON.stringify(trigger));
+
+  if (type.includes('recurrence') || type.includes('schedule')) return 'scheduled';
+  if (type.includes('request') || type.includes('manual') || kind.includes('button') || triggerText.includes('manual')) return 'instant';
+  return 'automated';
+}
+
+function normalizeStr(str) {
+  if (!str) return '';
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
+function parseMaybeJson(value) {
+  if (typeof value !== 'string') return value;
+  const text = value.trim();
+  if (!text || !['{', '['].includes(text[0])) return value;
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    return value;
+  }
+}
+
+function decodeMaybeUri(value) {
+  if (typeof value !== 'string' || !value.includes('%')) return value;
+  try {
+    return decodeURIComponent(value);
+  } catch (e) {
+    return value;
+  }
+}
+
+function getFlowStatusLabel(flow) {
+  const state = getFlowStatusKey(flow);
+  if (state === 'Enabled') return 'Ativado';
+  if (state === 'Disabled') return 'Desativado';
+  return flow.properties?.state || flow.state || 'Rascunho';
+}
+
+function getFlowStatusKey(flow) {
+  const state = normalizeStr(flow.properties?.state || flow.state || '');
+  if (['enabled', 'started', 'running', 'on', 'ativo', 'ativado'].includes(state)) return 'Enabled';
+  if (['disabled', 'stopped', 'suspended', 'off', 'inativo', 'desativado'].includes(state)) return 'Disabled';
+  return state || 'Rascunho';
+}
+
+function collectSearchableValues(value, values = [], seen = new WeakSet()) {
+  if (value == null) return values;
+  if (['string', 'number', 'boolean'].includes(typeof value)) {
+    values.push(String(value));
+    const decoded = decodeMaybeUri(value);
+    if (decoded !== value) {
+      values.push(decoded);
+      const parsedDecoded = parseMaybeJson(decoded);
+      if (parsedDecoded !== decoded) collectSearchableValues(parsedDecoded, values, seen);
+    }
+    const parsed = parseMaybeJson(value);
+    if (parsed !== value) collectSearchableValues(parsed, values, seen);
+    return values;
+  }
+  if (Array.isArray(value)) {
+    value.forEach(item => collectSearchableValues(item, values, seen));
+    return values;
+  }
+  if (typeof value === 'object') {
+    if (seen.has(value)) return values;
+    seen.add(value);
+    Object.entries(value).forEach(([key, item]) => {
+      values.push(key);
+      collectSearchableValues(item, values, seen);
+    });
+  }
+  return values;
+}
+
+function expandSearchableValue(value) {
+  return collectSearchableValues(value).join(' ');
+}
+
+function getFieldMatches(label, value, q) {
+  if (!q || value == null) return [];
+  const text = String(value);
+  const normalizedLabel = normalizeStr(label);
+  const normalizedText = normalizeStr(text);
+  if (!normalizedLabel.includes(q) && !normalizedText.includes(q)) return [];
+  return [{ path: label, value: text }];
+}
+
+function collectSearchMatches(value, q, path = 'detalhes', matches = [], seen = new WeakSet()) {
+  if (!q || value == null || matches.length >= 8) return matches;
+
+  if (['string', 'number', 'boolean'].includes(typeof value)) {
+    const text = String(value);
+    if (normalizeStr(text).includes(q)) matches.push({ path, value: text });
+
+    const decoded = decodeMaybeUri(text);
+    if (decoded !== text && normalizeStr(decoded).includes(q)) matches.push({ path: `${path} (decodificado)`, value: decoded });
+
+    const parsed = parseMaybeJson(decoded);
+    if (parsed !== decoded) collectSearchMatches(parsed, q, path, matches, seen);
+    return matches;
+  }
+
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => collectSearchMatches(item, q, `${path}.${index}`, matches, seen));
+    return matches;
+  }
+
+  if (typeof value === 'object') {
+    if (seen.has(value)) return matches;
+    seen.add(value);
+    Object.entries(value).forEach(([key, item]) => {
+      const childPath = `${path}.${key}`;
+      if (normalizeStr(key).includes(q)) matches.push({ path: childPath, value: key });
+      collectSearchMatches(item, q, childPath, matches, seen);
+    });
+  }
+
+  return matches;
+}
+
+// Pesquisa profunda no JSON de detalhe do fluxo por uma query normalizada.
+function deepSearchInDetail(flow, rawQ) {
+  const q = normalizeStr(rawQ);
+  if (!q) return false;
+
+  try {
+    const props = flow.properties || {};
+    const clientData = parseMaybeJson(props.clientData || flow.rawDetail?.properties?.clientData || flow.rawDetail?.clientData);
+
+    const candidates = [
+      props.definition,
+      flow.rawDetail?.definition,
+      flow.rawDetail?.flowDefinition,
+      flow.rawDetail?.properties?.workflowDefinition,
+      props.operationDefinition,
+      props.definitionSummary,
+      clientData,
+      flow.rawDetail
+    ];
+
+    for (const c of candidates) {
+      if (!c) continue;
+      const matches = [];
+      collectSearchMatches(c, q, 'Fluxo', matches);
+      if (matches && matches.length) return true;
+    }
+    // Fallback: stringify entire rawDetail/properties and search normalized text
+    try {
+      const full = JSON.stringify({ props: flow.properties || {}, raw: flow.rawDetail || {} });
+      const norm = normalizeStr(full);
+      if (norm.includes(q)) return true;
+    } catch (e) {
+      // ignore stringify errors
+    }
+  } catch (e) {
+    // ignore errors during deep search
+  }
+  return false;
+}
+
+function getSearchMatches(flow, rawQ) {
+  const q = normalizeStr(rawQ);
+  if (!q) return [];
+  const props = flow.properties || {};
+  const connectors = Object.values(props.connectionReferences || {});
+  const matches = [
+    ...getFieldMatches('Nome de exibição', props.displayName || flow.displayName, q),
+    ...getFieldMatches('Nome técnico', flow.name, q),
+    ...getFieldMatches('Status', getFlowStatusLabel(flow), q),
+    ...getFieldMatches('Tipo', getFlowType(flow), q),
+    ...getFieldMatches('Criado por', props.creator?.displayName || props.creator?.email, q),
+    ...getFieldMatches('Modificado por', props.lastModifiedBy?.displayName || props.lastModifiedBy?.email, q),
+    ...collectSearchMatches(connectors, q, 'Conectores'),
+    ...collectSearchMatches({
+      definition: props.definition,
+      operationDefinition: props.operationDefinition,
+      definitionSummary: props.definitionSummary,
+      clientData: parseMaybeJson(props.clientData),
+      rawDetail: flow.rawDetail
+    }, q, 'Fluxo')
+  ];
+
+  const unique = [];
+  const seen = new Set();
+  matches.forEach(match => {
+    if (!match?.path || match.value == null) return;
+    const key = `${match.path}|${String(match.value).slice(0, 160)}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    unique.push(match);
+  });
+  return unique.slice(0, 4);
+}
+
+function highlightSnippet(value, rawQ) {
+  const text = String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
+  if (!text) return '';
+  const normalizedText = normalizeStr(text);
+  const q = normalizeStr(rawQ);
+  const idx = normalizedText.indexOf(q);
+  const start = idx >= 0 ? Math.max(0, idx - 35) : 0;
+  const end = idx >= 0 ? Math.min(text.length, idx + rawQ.length + 45) : Math.min(text.length, 90);
+  const prefix = start > 0 ? '...' : '';
+  const suffix = end < text.length ? '...' : '';
+  const snippet = text.slice(start, end);
+  if (idx < 0) return escapeHtml(prefix + snippet + suffix);
+
+  const localIdx = idx - start;
+  return escapeHtml(prefix + snippet.slice(0, localIdx)) +
+    `<span class="match-hit">${escapeHtml(snippet.slice(localIdx, localIdx + rawQ.length))}</span>` +
+    escapeHtml(snippet.slice(localIdx + rawQ.length) + suffix);
+}
+
+function renderMatchColumn(flow, rawQ) {
+  if (!rawQ.trim()) return '<span style="color:#999">-</span>';
+  const matches = getSearchMatches(flow, rawQ);
+  if (!matches.length) {
+    return deepLoadInProgress
+      ? '<span style="color:#999">Carregando detalhes...</span>'
+      : '<span style="color:#999">Encontrado no índice geral</span>';
+  }
+
+  return `<div class="match-list">${matches.map(match => `
+    <div class="match-item">
+      <span class="match-path">${escapeHtml(match.path)}</span>
+      <span class="match-value">${highlightSnippet(match.value, rawQ)}</span>
+    </div>
+  `).join('')}</div>`;
+}
+
+function getSearchableText(flow) {
+  const props = flow.properties || {};
+  const statusLabel = getFlowStatusLabel(flow);
+  const typeLabel = getFlowType(flow);
+  const createdOn = props.createdTime ? new Date(props.createdTime).toLocaleString('pt-BR') : '';
+  const modifiedOn = props.lastModifiedTime ? new Date(props.lastModifiedTime).toLocaleString('pt-BR') : '';
+  const connectors = Object.values(props.connectionReferences || {}).flatMap(c => [
+    c.displayName,
+    c.connectionName,
+    c.api?.name,
+    c.source
+  ]);
+
+  return normalizeStr([
+    statusLabel,
+    props.state,
+    typeLabel,
+    createdOn,
+    props.creator?.displayName,
+    props.creator?.email,
+    modifiedOn,
+    props.lastModifiedBy?.displayName,
+    props.lastModifiedBy?.email,
+    ...connectors,
+    flow.searchableDetail,
+    ...collectSearchableValues(flow)
+  ].filter(Boolean).join(' '));
+}
+
+function applyFilters() {
+  const rawQ = document.getElementById('searchInput').value;
+  const q = normalizeStr(rawQ);
+  const st = document.getElementById('statusFilter').value;
+  const ty = document.getElementById('typeFilter').value;
+  const sort = document.getElementById('sortFilter').value;
+
+  // Se o usuário fez uma busca por texto e ainda não carregamos todas as definições,
+  // iniciar carregamento profundo em background para que a busca encontre termos
+  // dentro das definições (ações, variáveis e expressões).
+  if (q && !deepLoadInProgress && flows.some(f => !f.definitionLoaded)) {
+    loadFlowDefinitionsBackground();
+  }
+
+  filteredFlows = flows.filter(f => {
+    // Se há query, primeiro tenta pelo índice (rápido)
+    if (q) {
+      const indexed = getSearchableText(f).includes(q);
+      if (!indexed) {
+        // tentativa profunda: verificar explicitamente dentro do JSON da definição
+        const deepHit = deepSearchInDetail(f, q);
+        if (!deepHit) return false;
+      }
+    }
+    if (st && getFlowStatusKey(f) !== st) return false;
+    if (ty && getFlowTypeKey(f) !== ty) return false;
+    return true;
+  });
+
+  if (sort === 'modified') {
+    filteredFlows.sort((a,b) => new Date(b.properties?.lastModifiedTime||0) - new Date(a.properties?.lastModifiedTime||0));
+  } else {
+    filteredFlows.sort((a,b) => {
+      const na = (a.properties?.displayName||a.name||'').toLowerCase();
+      const nb = (b.properties?.displayName||b.name||'').toLowerCase();
+      return na.localeCompare(nb);
+    });
+  }
+  currentPage = 1;
+  renderResults();
+}
+
+function getDeepLoadStatusText() {
+  if (!deepLoadTotal) return '';
+  const pct = Math.round((deepLoadLoaded / deepLoadTotal) * 100);
+  const failedText = deepLoadFailed ? `, ${deepLoadFailed} falhas` : '';
+  if (deepLoadInProgress) return ` (Baixando conteúdo: ${pct}%${failedText})`;
+  return ` (Conteúdo 100% baixado${failedText})`;
+}
+
+function renderResults() {
+  const start = (currentPage-1)*pageSize;
+  const page = filteredFlows.slice(start, start+pageSize);
+  document.getElementById('resultsCount').innerHTML =
+    `${filteredFlows.length} fluxos<span id="deepLoadStatus" style="color:#0078d4; font-size:11px; margin-left:10px;">${getDeepLoadStatusText()}</span>`;
+
+  if (!page.length) {
+    const searchingDeepContent = deepLoadInProgress && document.getElementById('searchInput').value.trim();
+    const loadFinishedWithFailures = !deepLoadInProgress && deepLoadFailed && document.getElementById('searchInput').value.trim();
+    const msg = searchingDeepContent
+      ? 'Buscando também dentro das ações, variáveis e expressões dos fluxos...'
+      : loadFinishedWithFailures
+        ? 'Nenhum fluxo encontrado. Algumas definições não puderam ser carregadas; veja a contagem de falhas ao lado do total.'
+      : 'Nenhum fluxo encontrado';
+    document.getElementById('resultsContent').innerHTML = `<div class="empty-state"><p>${msg}</p></div>`;
+    document.getElementById('pagination').style.display = 'none';
+    return;
+  }
+
+  const rawQ = document.getElementById('searchInput').value;
+  let html = '<table class="results-table"><thead><tr><th>Nome</th><th>Tipo</th><th>Status</th><th>Encontrado em</th><th>Modificado em</th><th>Ações</th></tr></thead><tbody>';
+  page.forEach(f => {
+    const st = getFlowStatusKey(f);
+    const sc = st === 'Enabled' ? 'status-Enabled' : 'status-Disabled';
+    const sl = getFlowStatusLabel(f);
+    const dn = f.properties?.displayName || f.name;
+    const mod = f.properties?.lastModifiedTime ? new Date(f.properties.lastModifiedTime).toLocaleDateString('pt-BR') : '-';
+    const ft = getFlowType(f);
+    const id = encodeURIComponent(f.name);
+    const matchHtml = renderMatchColumn(f, rawQ);
+    html += `<tr>
+      <td><strong>${escapeHtml(dn)}</strong><br><small style="color:#999">${escapeHtml(f.name)}</small></td>
+      <td><span class="type-badge">${escapeHtml(ft)}</span></td>
+      <td><span class="status-badge ${sc}">${escapeHtml(sl)}</span></td>
+      <td>${matchHtml}</td>
+      <td>${mod}</td>
+      <td><button class="btn-icon" onclick="viewDetail('${id}')">Detalhes</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('resultsContent').innerHTML = html;
+
+  const total = Math.ceil(filteredFlows.length/pageSize);
+  document.getElementById('pagination').style.display = total > 1 ? 'flex' : 'none';
+  document.getElementById('pageInfo').textContent = `Página ${currentPage} de ${total}`;
+  document.getElementById('prevBtn').disabled = currentPage === 1;
+  document.getElementById('nextBtn').disabled = currentPage === total;
+}
+
+async function viewDetail(encodedName) {
+  const flowName = decodeURIComponent(encodedName);
+  document.getElementById('detailPanel').classList.add('active');
+  document.getElementById('detailBody').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+
+  try {
+    const url = flowDetailUrl(encodedName);
+    const f = await proxyGet(url);
+    renderDetail(f);
+  } catch(e) {
+    // Usa dados já carregados
+    const f = flows.find(x => x.name === flowName);
+    if (f) renderDetail(f);
+    else document.getElementById('detailBody').innerHTML = '<p style="padding:20px">Erro: ' + e.message + '</p>';
+  }
+}
+
+function renderDetail(f) {
+  const dn = f.properties?.displayName || f.name;
+  document.getElementById('detailTitle').textContent = dn;
+  document.getElementById('detailSubtitle').textContent = f.name;
+
+  const st = getFlowStatusKey(f);
+  const sc = st === 'Enabled' ? 'status-Enabled' : 'status-Disabled';
+  const sl = getFlowStatusLabel(f);
+  const ft = getFlowType(f);
+  const createdOn = f.properties?.createdTime ? new Date(f.properties.createdTime).toLocaleString('pt-BR') : '-';
+  const modOn = f.properties?.lastModifiedTime ? new Date(f.properties.lastModifiedTime).toLocaleString('pt-BR') : '-';
+  const createdBy = f.properties?.creator?.displayName || f.properties?.creator?.email || '-';
+  const modBy = f.properties?.lastModifiedBy?.displayName || f.properties?.lastModifiedBy?.email || '-';
+
+  const conns = Object.values(f.properties?.connectionReferences || {});
+  const connHtml = conns.length
+    ? conns.map(c => `<span class="type-badge" style="margin:2px">${c.displayName||c.connectionName||'Conector'}</span>`).join('')
+    : '<span style="color:#999">Nenhum</span>';
+
+  const paLink = `https://make.powerautomate.com/environments/${environmentId}/flows/${f.name}`;
+  let defJson = '';
+  try {
+    const props = f.properties || {};
+    const clientData = parseMaybeJson(props.clientData || f.rawDetail?.properties?.clientData || f.rawDetail?.clientData);
+    const defObj = props.definition || f.rawDetail?.definition || f.rawDetail?.flowDefinition || f.rawDetail?.properties?.workflowDefinition || parseMaybeJson(props.definitionSummary) || clientData?.definition || clientData?.properties?.definition || {};
+    defJson = JSON.stringify(defObj, null, 2);
+  } catch(e) { defJson = 'N/A'; }
+
+  document.getElementById('detailBody').innerHTML = `
+    <div class="detail-section">
+      <h3>Informações Gerais</h3>
+      <div class="detail-row"><span class="detail-label">Nome Técnico</span><span class="detail-value">${f.name}</span></div>
+      <div class="detail-row"><span class="detail-label">Nome de Exibição</span><span class="detail-value">${dn}</span></div>
+      <div class="detail-row"><span class="detail-label">Tipo</span><span class="detail-value"><span class="type-badge">${ft}</span></span></div>
+      <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value"><span class="status-badge ${sc}">${sl}</span></span></div>
+    </div>
+    <div class="detail-section">
+      <h3>Histórico de Modificações</h3>
+      <div class="detail-row"><span class="detail-label">Criado por</span><span class="detail-value">${createdBy}</span></div>
+      <div class="detail-row"><span class="detail-label">Criado em</span><span class="detail-value">${createdOn}</span></div>
+      <div class="detail-row"><span class="detail-label">Modificado por</span><span class="detail-value">${modBy}</span></div>
+      <div class="detail-row"><span class="detail-label">Modificado em</span><span class="detail-value">${modOn}</span></div>
+    </div>
+    <div class="detail-section">
+      <h3>Descrição</h3>
+      <p style="color:${f.properties?.description?'#333':'#999'};font-size:13px">${f.properties?.description||'Sem descrição'}</p>
+    </div>
+    <div class="detail-section">
+      <h3>Conectores</h3>
+      <div>${connHtml}</div>
+    </div>
+    <div class="detail-section">
+      <h3>Abrir no Power Automate</h3>
+      <a href="${paLink}" target="_blank" class="btn btn-primary" style="text-decoration:none">🔗 Abrir fluxo</a>
+    </div>
+    <div class="detail-section">
+      <h3>Definição (JSON)</h3>
+      <div style="margin-bottom:8px"><button id="copyJsonBtn" class="btn btn-secondary" onclick="copyDetailJson()">Copiar JSON</button></div>
+      <div id="detailJsonViewer" class="json-viewer">${defJson}</div>
+    </div>
+  `;
+}
+
+function closeDetail() { document.getElementById('detailPanel').classList.remove('active'); }
+
+function copyDetailJson() {
+  try {
+    const viewer = document.getElementById('detailJsonViewer');
+    if (!viewer) return alert('JSON não encontrado');
+    const text = viewer.textContent || viewer.innerText || '';
+    if (!navigator.clipboard) {
+      // fallback
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+      alert('JSON copiado para a área de transferência');
+      return;
+    }
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('copyJsonBtn');
+      if (btn) {
+        const orig = btn.textContent;
+        btn.textContent = 'Copiado!';
+        setTimeout(() => btn.textContent = orig, 1500);
+      }
+    }).catch(() => {
+      alert('Não foi possível copiar o JSON');
+    });
+  } catch (e) {
+    console.warn('Erro ao copiar JSON', e);
+    alert('Erro ao copiar JSON');
+  }
+}
+function prevPage() { if (currentPage > 1) { currentPage--; renderResults(); } }
+function nextPage() {
+  const total = Math.ceil(filteredFlows.length/pageSize);
+  if (currentPage < total) { currentPage++; renderResults(); }
+}
+function showLoading() { document.getElementById('resultsContent').innerHTML = '<div class="loading"><div class="spinner"></div><p>Carregando fluxos...</p></div>'; }
+function showError(msg) { document.getElementById('resultsContent').innerHTML = `<div class="error-msg" style="margin:20px">${msg}</div>`; }
+
+// Verifica se já tem sessão ativa ao carregar (Pode ser implementado com localStorage no futuro se necessário)
+window.addEventListener('DOMContentLoaded', async () => {
+  console.log('App carregado');
+});
+</script>
+</body>
+</html>

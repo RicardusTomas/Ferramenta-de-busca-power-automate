@@ -1,0 +1,57 @@
+{% extends 'msfer_layout' %}
+
+{% block main %}
+<div class="msfer-list">
+  {% fetchxml fluxos %}
+    <fetch mapping="logical">
+      <entity name="msfer_fluxo">
+        <attribute name="msfer_name" />
+        <attribute name="msfer_displayname" />
+        <attribute name="msfer_description" />
+        <attribute name="msfer_state" />
+        <attribute name="msfer_type" />
+        <attribute name="msfer_createdon" />
+        <attribute name="msfer_modifiedon" />
+        <order attribute="msfer_displayname" descending="false" />
+        <filter>
+          <condition attribute="msfer_name" operator="not-null" />
+        </filter>
+      </entity>
+    </fetch>
+  {% endfetchxml %}
+  
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Descrição</th>
+        <th>Tipo</th>
+        <th>Status</th>
+        <th>Última Modificação</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for fluxo in fluxos.results %}
+      <tr>
+        <td>
+          <a href="/fluxo/{{ fluxo.msfer_fluxoid }}">{{ fluxo.msfer_displayname | default: fluxo.msfer_name }}</a>
+        </td>
+        <td>{{ fluxo.msfer_description | truncate: 100 }}</td>
+        <td>
+          {% if fluxo.msfer_type == 1 %}Fluxo de Nuvem
+          {% elsif fluxo.msfer_type == 2 %}Instantâneo
+          {% elsif fluxo.msfer_type == 3 %}Automático
+          {% elsif fluxo.msfer_type == 4 %}Agendado{% endif %}
+        </td>
+        <td>
+          {% if fluxo.msfer_state == 1 %}<span class="badge badge-success">Ativado</span>
+          {% elsif fluxo.msfer_state == 2 %}<span class="badge badge-secondary">Desativado</span>
+          {% else %}<span class="badge badge-warning">Rascunho</span>{% endif %}
+        </td>
+        <td>{{ fluxo.msfer_modifiedon | date: 'dd/MM/yyyy HH:mm' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

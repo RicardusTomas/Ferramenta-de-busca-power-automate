@@ -1,0 +1,61 @@
+{% extends 'msfer_layout' %}
+
+{% block main %}
+<div class="msfer-search">
+  <h1>Buscar Fluxos</h1>
+  
+  <form method="get" action="/fluxos">
+    <div class="search-box">
+      <input 
+        type="text" 
+        name="q" 
+        placeholder="Buscar por nome, descrição ou tipo..." 
+        value="{{ request.params.q }}"
+        class="form-control"
+      >
+      <button type="submit" class="btn btn-primary">Buscar</button>
+    </div>
+    
+    <div class="filters">
+      <div class="filter-group">
+        <label>Ambiente</label>
+        <select name="ambiente">
+          <option value="">Todos</option>
+          {% fetchxml ambientes %}
+            <fetch mapping="logical">
+              <entity name="msfer_ambiente">
+                <attribute name="msfer_name" />
+                <attribute name="msfer_displayname" />
+              </entity>
+            </fetch>
+          {% endfetchxml %}
+          {% for ambiente in ambientes.results %}
+            <option value="{{ ambiente.msfer_name }}">{{ ambiente.msfer_displayname }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Tipo</label>
+        <select name="tipo">
+          <option value="">Todos</option>
+          <option value="1">Fluxo de Nuvem</option>
+          <option value="2">Instantâneo</option>
+          <option value="3">Automático</option>
+          <option value="4">Agendado</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Status</label>
+        <select name="status">
+          <option value="">Todos</option>
+          <option value="1">Ativado</option>
+          <option value="2">Desativado</option>
+          <option value="3">Rascunho</option>
+        </select>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

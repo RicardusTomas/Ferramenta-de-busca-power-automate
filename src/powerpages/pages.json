@@ -1,0 +1,56 @@
+{
+  "pages": [
+    {
+      "name": "Busca de Fluxos",
+      "url": "fluxos",
+      "entity": "msfer_fluxo",
+      "layout": "msfer_main",
+      "sections": [
+        {
+          "name": "Busca",
+          "webTemplate": "msfer_busca_fluxos"
+        },
+        {
+          "name": "Lista",
+          "webTemplate": "msfer_lista_fluxos"
+        }
+      ]
+    },
+    {
+      "name": "Detalhes do Fluxo",
+      "url": "fluxo/{msfer_fluxoid}",
+      "entity": "msfer_fluxo",
+      "layout": "msfer_detail",
+      "sections": [
+        {
+          "name": "Detalhes",
+          "webTemplate": "msfer_detalhes_fluxo"
+        }
+      ]
+    },
+    {
+      "name": "Lista de Ambientes",
+      "url": "ambientes",
+      "entity": "msfer_ambiente",
+      "layout": "msfer_main",
+      "sections": [
+        {
+          "name": "Lista",
+          "webTemplate": "msfer_lista_ambientes"
+        }
+      ]
+    },
+    {
+      "name": "Lista de Conectores",
+      "url": "conectores",
+      "entity": "msfer_conector",
+      "layout": "msfer_main",
+      "sections": [
+        {
+          "name": "Lista",
+          "webTemplate": "msfer_lista_conectores"
+        }
+      ]
+    }
+  ]
+}

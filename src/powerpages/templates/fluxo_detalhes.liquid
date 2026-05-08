@@ -1,0 +1,56 @@
+{% extends 'msfer_layout' %}
+
+{% block main %}
+<div class="msfer-details">
+  <h1>{{ fluxo.msfer_displayname | default: fluxo.msfer_name }}</h1>
+  
+  <div class="card">
+    <div class="card-header">
+      <h5>Informações Gerais</h5>
+    </div>
+    <div class="card-body">
+      <dl class="row">
+        <dt class="col-sm-3">Nome Técnico</dt>
+        <dd class="col-sm-9">{{ fluxo.msfer_name }}</dd>
+        
+        <dt class="col-sm-3">Descrição</dt>
+        <dd class="col-sm-9">{{ fluxo.msfer_description | default: 'Sem descrição' }}</dd>
+        
+        <dt class="col-sm-3">Status</dt>
+        <dd class="col-sm-9">
+          {% if fluxo.msfer_state == 1 %}<span class="badge badge-success">Ativado</span>
+          {% elsif fluxo.msfer_state == 2 %}<span class="badge badge-secondary">Desativado</span>
+          {% else %}<span class="badge badge-warning">Rascunho</span>{% endif %}
+        </dd>
+        
+        <dt class="col-sm-3">Tipo</dt>
+        <dd class="col-sm-9">
+          {% if fluxo.msfer_type == 1 %}Fluxo de Nuvem
+          {% elsif fluxo.msfer_type == 2 %}Instantâneo
+          {% elsif fluxo.msfer_type == 3 %}Automático
+          {% elsif fluxo.msfer_type == 4 %}Agendado{% endif %}
+        </dd>
+        
+        <dt class="col-sm-3">Data de Criação</dt>
+        <dd class="col-sm-9">{{ fluxo.msfer_createdon | date: 'dd/MM/yyyy HH:mm' }}</dd>
+        
+        <dt class="col-sm-3">Última Modificação</dt>
+        <dd class="col-sm-9">{{ fluxo.msfer_modifiedon | date: 'dd/MM/yyyy HH:mm' }}</dd>
+      </dl>
+    </div>
+  </div>
+  
+  <div class="card mt-3">
+    <div class="card-header">
+      <h5>Ações</h5>
+    </div>
+    <div class="card-body">
+      <a href="https://make.powerautomate.com/environments/{{ fluxo.msfer_ambiente.name }}/flows/{{ fluxo.msfer_name }}" 
+         target="_blank" 
+         class="btn btn-primary">
+        Abrir no Power Automate
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,14 @@
+{
+  "name": "ferramenta-busca-fluxos",
+  "version": "1.0.0",
+  "description": "Ferramenta de Busca de Fluxos Power Platform",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@azure/msal-node": "^5.1.5",
+    "axios": "^1.6.0",
+    "express": "^4.18.0"
+  }
+}
