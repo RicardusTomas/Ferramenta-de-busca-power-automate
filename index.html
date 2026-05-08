@@ -1068,9 +1068,19 @@ function applyFilters() {
     if (q) {
       const indexed = getSearchableText(f).includes(q);
       if (!indexed) {
-        // tentativa profunda: verificar explicitamente dentro do JSON da definição
-        const deepHit = deepSearchInDetail(f, q);
-        if (!deepHit) return false;
+        // Se a definição ainda não foi carregada, não excluir o fluxo ainda —
+        // aguardaremos o carregamento profundo em background e atualizaremos os resultados.
+        if (!f.definitionLoaded && deepLoadInProgress) {
+          // mantém o fluxo por ora
+        } else if (!f.definitionLoaded && !deepLoadInProgress) {
+          // se não está carregando em background, ainda tentamos uma busca profunda localmente
+          const deepHit = deepSearchInDetail(f, q);
+          if (!deepHit) return false;
+        } else {
+          // definição já carregada — faz a busca profunda e decide
+          const deepHit = deepSearchInDetail(f, q);
+          if (!deepHit) return false;
+        }
       }
     }
     if (st && getFlowStatusKey(f) !== st) return false;
