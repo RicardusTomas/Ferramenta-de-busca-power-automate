@@ -94,7 +94,10 @@ body{font-family:'Segoe UI',sans-serif;background:#f5f5f5;min-height:100vh}
   <div id="deepLoadOverlay" class="deep-load-overlay" style="display:none">
     <div class="spinner" style="width:26px;height:26px;border-width:3px;border-top-color:#fff"></div>
     <div>
-      <div class="pct" id="deepLoadPct">0%</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="pct" id="deepLoadPct">0%</div>
+        <button id="deepLoadCancelBtn" class="btn btn-secondary" style="padding:6px 10px;font-size:12px">Cancelar</button>
+      </div>
       <div class="msg" id="deepLoadMsg">Carregando definições...</div>
       <div class="small" id="deepLoadSmall">0 / 0</div>
     </div>
@@ -214,6 +217,7 @@ let currentPage = 1, pageSize = 20;
 let accessToken = null, flowAccessToken = null, bapAccessToken = null, environmentId = null;
 let deepLoadInProgress = false;
 let deepLoadLoaded = 0, deepLoadTotal = 0, deepLoadFailed = 0;
+let deepLoadAbort = false;
 
 function setTokens(data) {
   flowAccessToken = data.flowAccessToken || data.accessToken || null;
@@ -608,28 +612,38 @@ async function loadFlowDefinitionsBackground() {
   renderResults();
   try { showDeepLoadOverlay(0); } catch(e) { /* ignore */ }
   
-  // Cria lotes para não sobrecarregar a API (3 por vez)
-  for (let i = 0; i < flows.length; i += 3) {
-    const batch = flows.slice(i, i + 3);
-    await Promise.all(batch.map(async (f) => {
-      if (f.definitionLoaded) return;
-      try {
-        const detail = await loadFlowDetail(f);
-        mergeFlowDetail(f, detail);
-        f.definitionLoaded = true;
-      } catch (e) {
-        f.definitionLoadError = e.message || String(e);
-        deepLoadFailed++;
-      }
+  // Processa sequencialmente para reduzir uso de memória e permitir cancelamento
+  deepLoadAbort = false;
+  const cancelBtn = document.getElementById('deepLoadCancelBtn');
+  if (cancelBtn) {
+    cancelBtn.onclick = () => { deepLoadAbort = true; hideDeepLoadOverlay(); };
+  }
+  for (let i = 0; i < flows.length; i++) {
+    if (deepLoadAbort) break;
+    const f = flows[i];
+    if (f.definitionLoaded) {
+      // Already indexed
       deepLoadLoaded++;
-      try { updateDeepLoadOverlay(deepLoadLoaded, deepLoadTotal, deepLoadFailed); } catch(e) { /* ignore */ }
-    }));
-    
-    // Reaplica filtros ativos porque tipo e busca dependem dos detalhes carregados em background.
-    if (hasActiveFilters()) {
-      applyFilters();
-    } else {
-      renderResults();
+      try { updateDeepLoadOverlay(deepLoadLoaded, deepLoadTotal, deepLoadFailed); } catch(e) {}
+      continue;
+    }
+    try {
+      const detail = await loadFlowDetail(f);
+      mergeFlowDetail(f, detail);
+      f.definitionLoaded = true;
+      // release heavy raw payload to save memory; keep searchable index and essential properties
+      try { delete f.rawDetail; } catch(e) {}
+    } catch (e) {
+      f.definitionLoadError = e.message || String(e);
+      deepLoadFailed++;
+    }
+    deepLoadLoaded++;
+    try { updateDeepLoadOverlay(deepLoadLoaded, deepLoadTotal, deepLoadFailed); } catch(e) {}
+
+    // Atualiza a tela ocasionalmente para manter responsivo
+    if (i % 5 === 0) {
+      if (hasActiveFilters()) applyFilters(); else renderResults();
+      await new Promise(r => setTimeout(r, 60));
     }
   }
   deepLoadInProgress = false;
