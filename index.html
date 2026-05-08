@@ -74,6 +74,11 @@ body{font-family:'Segoe UI',sans-serif;background:#f5f5f5;min-height:100vh}
 .detail-value{flex:1;color:#333;font-size:13px}
 .json-viewer{background:#1e1e1e;color:#d4d4d4;padding:15px;border-radius:8px;font-family:'Consolas',monospace;font-size:11px;max-height:300px;overflow:auto;white-space:pre-wrap;word-break:break-all}
 .env-tag{font-size:11px;background:#e7f3ff;color:#0078d4;padding:2px 8px;border-radius:10px;margin-left:8px}
+/* Deep load overlay */
+.deep-load-overlay{position:fixed;right:20px;bottom:20px;background:rgba(0,0,0,.75);color:white;padding:14px 18px;border-radius:10px;z-index:1200;display:flex;align-items:center;gap:12px;box-shadow:0 6px 18px rgba(0,0,0,.4);font-family:Segoe UI, sans-serif}
+.deep-load-overlay .pct{font-size:16px;font-weight:700}
+.deep-load-overlay .msg{font-size:13px;opacity:.95}
+.deep-load-overlay .small{font-size:11px;opacity:.8}
 </style>
 </head>
 <body>
@@ -86,6 +91,14 @@ body{font-family:'Segoe UI',sans-serif;background:#f5f5f5;min-height:100vh}
 </div>
 
 <div class="container">
+  <div id="deepLoadOverlay" class="deep-load-overlay" style="display:none">
+    <div class="spinner" style="width:26px;height:26px;border-width:3px;border-top-color:#fff"></div>
+    <div>
+      <div class="pct" id="deepLoadPct">0%</div>
+      <div class="msg" id="deepLoadMsg">Carregando definições...</div>
+      <div class="small" id="deepLoadSmall">0 / 0</div>
+    </div>
+  </div>
   <div class="login-panel" id="loginPanel">
     <h2>Conectar ao Power Platform</h2>
     <p>Cole a URL do seu ambiente e entre com sua conta Microsoft</p>
@@ -593,6 +606,7 @@ async function loadFlowDefinitionsBackground() {
   deepLoadTotal = flows.length;
   deepLoadInProgress = true;
   renderResults();
+  try { showDeepLoadOverlay(0); } catch(e) { /* ignore */ }
   
   // Cria lotes para não sobrecarregar a API (3 por vez)
   for (let i = 0; i < flows.length; i += 3) {
@@ -608,6 +622,7 @@ async function loadFlowDefinitionsBackground() {
         deepLoadFailed++;
       }
       deepLoadLoaded++;
+      try { updateDeepLoadOverlay(deepLoadLoaded, deepLoadTotal, deepLoadFailed); } catch(e) { /* ignore */ }
     }));
     
     // Reaplica filtros ativos porque tipo e busca dependem dos detalhes carregados em background.
@@ -618,8 +633,34 @@ async function loadFlowDefinitionsBackground() {
     }
   }
   deepLoadInProgress = false;
+  try { hideDeepLoadOverlay(); } catch(e) { /* ignore */ }
   if (hasActiveFilters()) applyFilters();
   else renderResults();
+}
+
+function showDeepLoadOverlay(initialPct) {
+  const o = document.getElementById('deepLoadOverlay');
+  if (!o) return;
+  document.getElementById('deepLoadPct').textContent = (Math.round(initialPct) || 0) + '%';
+  document.getElementById('deepLoadMsg').textContent = 'Carregando definições...';
+  document.getElementById('deepLoadSmall').textContent = `0 / ${deepLoadTotal}`;
+  o.style.display = 'flex';
+}
+
+function updateDeepLoadOverlay(loaded, total, failed) {
+  const o = document.getElementById('deepLoadOverlay');
+  if (!o) return;
+  const pct = total ? Math.round((loaded / total) * 100) : 0;
+  document.getElementById('deepLoadPct').textContent = pct + '%';
+  const failText = failed ? `, ${failed} falhas` : '';
+  document.getElementById('deepLoadMsg').textContent = `Baixando conteúdo${failText}`;
+  document.getElementById('deepLoadSmall').textContent = `${loaded} / ${total}`;
+}
+
+function hideDeepLoadOverlay() {
+  const o = document.getElementById('deepLoadOverlay');
+  if (!o) return;
+  o.style.display = 'none';
 }
 
 // local samples support removed
